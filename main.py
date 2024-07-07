@@ -1,13 +1,14 @@
 import asyncio
 import logging
-from flask import Flask, render_template
 
 from livekit.agents import JobContext, JobRequest, WorkerOptions, cli
-from livekit.agents.llm import ChatContext, ChatMessage, ChatRole
+from livekit.agents.llm import (
+    ChatContext,
+    ChatMessage,
+    ChatRole,
+)
 from livekit.agents.voice_assistant import VoiceAssistant
 from livekit.plugins import deepgram, elevenlabs, openai, silero
-
-app = Flask(__name__)
 
 # This function is the entrypoint for the agent.
 async def entrypoint(ctx: JobContext):
@@ -22,11 +23,13 @@ async def entrypoint(ctx: JobContext):
     )
 
     # VoiceAssistant is a class that creates a full conversational AI agent.
+    # See https://github.com/livekit/agents/blob/main/livekit-agents/livekit/agents/voice_assistant/assistant.py
+    # for details on how it works.
     assistant = VoiceAssistant(
         vad=silero.VAD(), # Voice Activity Detection
         stt=deepgram.STT(), # Speech-to-Text
         llm=openai.LLM(), # Language Model
-        tts=openai.TTS(voice="alloy"),
+        tts=openai.TTS("Alloy"), # Text-to-Speech
         chat_ctx=initial_ctx, # Chat history context
     )
 
@@ -49,13 +52,6 @@ async def request_fnc(req: JobRequest) -> None:
     await req.accept(entrypoint)
 
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-
 if __name__ == "__main__":
     # Initialize the worker with the request function
     cli.run_app(WorkerOptions(request_fnc))
-    # Run the Flask app
-    app.run(port=5000)
